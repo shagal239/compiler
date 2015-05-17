@@ -1,0 +1,2 @@
+void power (int k, string str) {
+}
