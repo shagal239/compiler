@@ -1,5 +1,150 @@
 grammar Grammar;
 
+@parser::header {
+    import java.util.*;
+    import java.io.*;
+}
+
+@parser::members {
+    List<Scope> scopes = new ArrayList<Scope>();
+    List<Variable> returnVariables = new ArrayList<Variable>();
+    List<String> loopStart = new ArrayList<String>();
+    List<String> loopEnd = new ArrayList<String>();
+    List<String> code = new ArrayList<String>();
+    int id = 0;
+    int tempId = 0;
+    int labelId = 0;
+
+    public String label(){
+        return "loop" + (labelId++);
+    }
+
+
+    public String newLabel() {
+        code.add("l" + labelId + ":");
+        return label();
+    }
+
+    public void openScope(){
+        scopes.add(new Scope());
+    }
+
+    public void closeScope(){
+        scopes.remove(scopes.size() - 1);
+    }
+
+    public void openLoop() {
+        openScope();
+        loopStart.add(label());
+        loopEnd.add(label());
+        code.add(loopStart.get(loopStart.size() - 1) + ":");
+    }
+
+    public void closeLoop() {
+        openScope();
+        code.add(loopEnd.get(loopEnd.size() - 1) + ":");
+        loopStart.remove(loopStart.size() - 1);
+        loopEnd.remove(loopEnd.size() - 1);
+    }
+
+    public String getLoopStart() {
+        return loopStart.get(loopStart.size() - 1);
+    }
+
+    public String getLoopEnd() {
+        return loopEnd.get(loopEnd.size() - 1);
+    }
+
+    public Variable createTempVariable(Type type) {
+        if (type == Type.VoidType) {
+            return Variable.Void;
+        }
+        code.add(type + " t" + tempId);
+        return new Variable(type, "t" + tempId++);
+    }
+
+    public Variable createVariable(String name, Type type) {
+        Scope scope = scopes.get(scopes.size() - 1);
+        if (scope.contains(name)){
+            return null;
+        } else {
+            Variable v = new Variable(type, "v" + (id++));
+            code.add(v.getType() + " " + v.getId());
+            scope.addVariable(v);
+            return v;
+        }
+    }
+
+    public Variable resolveVariable(String name) {
+        int scope = scopes.size() - 1;
+        while (scope >= 0) {
+            Scope s = scopes.get(scope);
+             Variable variable = s.get(name);
+             if (variable != null) {
+                return variable;
+             }
+             scope--;
+        }
+        return null;
+    }
+
+    public Variable registerFunction(String name, Type result, List<Variable> arguments) {
+        openScope();
+        Type[] types = new Type[arguments.size()];
+        for (int i = 0; i < types.length;i++) {
+            types[i] = arguments.get(i).getType();
+        }
+        Function function = new Function(name, result, types);
+        	        Functions.add(function);
+        	        code.add(function.getId() + ":");
+        	        Variable res = createTempVariable(function.getResult());
+        	        code.add("pop " + res);
+        	        Collections.reverse(arguments);
+        	        for (Variable variable: arguments) {
+        	            Variable v = createVariable(variable.getId(), variable.getType());
+        	            code.add("pop " + v.getId());
+        	        }
+
+        returnVariables.add(res);
+
+        return res;
+    }
+
+    public void endFunction() {
+        closeScope();
+        returnVariables.remove(returnVariables.size() - 1);
+    }
+
+
+    public Variable callFunction(String name, Variable... variables) {
+        return callFunction(name, Arrays.asList(variables));
+    }
+
+    public Variable callFunction(String name, List<Variable> variables) {
+        List<Type> types = new ArrayList<Type>();
+                    for (Variable v : variables) {
+                        types.add(v.getType());
+                    }
+        	        Function function = Functions.get(name, types);
+        	        for (Variable variable: variables) {
+        	            code.add("param " + variable.getId());
+        	        }
+
+        	        if (function.getResult() != Type.VoidType) {
+        	           Variable t = createTempVariable(function.getResult());
+        	           code.add("param &" + t.getId());
+        	           code.add("call " + function.getId());
+        	           return t;
+        	        } else {
+        	            code.add("param &void");
+        	            code.add("call " + function.getId());
+        	            return new Variable(Type.VoidType, "void");
+        	        }
+    }
+    public Variable getReturnVariable() {
+        return returnVariables.get(returnVariables.size() - 1);
+    }
+}
 type returns [Type result]:
     'int' {$result = Type.IntegerType;} |
     'string' {$result = Type.StringType;} |
@@ -16,7 +161,17 @@ start: body;
 body: methodDeclaration* EOF;
 
 methodDeclaration: 
-    methodtype Identifier LPAREN parameters? RPAREN block
+    methodtype Identifier LPAREN (a=parameters)? RPAREN
+    {List<Variable> args = new ArrayList<Variable>();
+    if (((MethodDeclarationContext)_localctx).a != null) {
+        args = $a.vars;
+    }
+    registerFunction($Identifier.text, $methodtype.result, args);
+    }
+    block {
+        endFunction();
+        code.add("back");
+    }
     ;
 
 block :
@@ -32,72 +187,172 @@ statement:
     forstatement |
     whilestatement |
     block |
-    'break;' |
-    'continue;'|
-    'return ' expression? ';'
+    'break;' {code.add("goto" + getLoopEnd());}|
+    'continue;' {code.add("goto " + getLoopStart()); }|
+    'return ' e=expression?
+    {
+        Variable variable = ((StatementContext)_localctx).e == null ? (new Variable(Type.VoidType, "void")) : $e.var;
+        Variable returnVariable = getReturnVariable();
+        if (returnVariable == null) {
+            return null;
+        }
+        if (returnVariable.getType() != $e.var.getType()) {
+            return null;
+        }
+
+        code.add("*" + returnVariable + " = " + $e.var);
+        code.add("back");
+    }
+        ';'
     ;
 
 ifstatement:
-    'if' LPAREN expression RPAREN LBRACE statement RBRACE
-    ('else' LBRACE statement RBRACE )?
+    'if' {openScope();}
+    LPAREN
+    a=expression {Variable v = $a.var; String label = label(); code.add("!if " + v + " goto " + label);}
+    RPAREN LBRACE
+    s=statement { code.add(label +":"); } RBRACE
+    ('else'
+    {String labelF = label(); code.add("if " + v + " goto " + labelF);}
+    LBRACE
+    statement {code.add(labelF+ ":"); closeScope();} RBRACE )?
     ;
 
 whilestatement:
-    'while' LPAREN expression RPAREN statement
+    'while' {openLoop();}
+    LPAREN
+    e=expression {Variable v = $e.var; code.add("!if " + v + " goto " + getLoopEnd()); }
+    RPAREN
+    s=statement { code.add("goto " + getLoopStart()); closeLoop(); }
     ;
 
 forstatement:
-    'for' LPAREN forinit ';' emptyexpression ';' expressionList RPAREN
+    'for'
+    LPAREN
+    forinit ';'
+    { openLoop(); }
+    e=expression
+    { Variable v = $e.var; code.add("!if " + v + " goto " + getLoopEnd()); } ';'
+    {List<String> save = code;
+    code = new ArrayList<String>();
+    }
+    expressionList
+    { List<String> temp = save;
+    save = code;
+    code = temp;
+    }
+    RPAREN
     statement
+    {code.addAll(save);
+    code.add("goto " + getLoopStart());
+    closeLoop();
+    }
     ;
 
 declaration:
-    type varibleDeclaration(', ' varibleDeclaration)* ';'
+    type varibleDeclaration[$type.result](', ' varibleDeclaration[$type.result])* ';'
     ;
 
 forinit:
     declaration | expressionList
     ;
 
-varibleDeclaration:
-    Identifier |
-    Identifier '=' expression;
+varibleDeclaration [Type t]:
+    Identifier { createVariable($Identifier.text, t); }|
+    Identifier '=' expression
+    {
+        Variable a = createVariable($Identifier.text, t);
+        Variable b = $expression.var;
+        code.add(a + " = " + b);
+    }
+    ;
 
-emptyexpression:
+expression returns [Variable var]:
+    id=Identifier {Variable left = resolveVariable($id.text);}
+    op=('='|'+=') r=expression1
+    {
+        Variable right = $r.var;
+        if ($op.text.equals("+=")) {
+            code.add(left.getId() + " = " + left.getId() + " + " + right.getId());
+        } else {
+            code.add(left.getId() + " = " + right.getId());
+        }
+    }
     |
-    expression
+    r=expression1 {$var = $r.var;}
     ;
 
-expression:
-    Identifier Operators=('='|'+=') expression1 |
-    expression1
-    ;
-
-expression1:
-    primary |
-    op=('-' | '!' | '~') expression1 |
-    expression1 op=('*' | '/' | '%') expression1 |
-    expression1 op=('+'|'-') expression1 |
-    expression1 op=('=='|'!='|'<'|'>'|'<='|'>=') expression1 |
-    expression1 '&&' expression1 |
-    expression1 '||' expression1
-    ;
-
-primary:
-    Identifier |
-    '(' expression ')' |
-    Identifier '(' expressionList ')' |
-    ioFunctions |
-    literal
-    ;
-expressionList:
+expression1 returns [Variable var]:
+    primary {$var = $primary.var;}|
+    op=('-' | '!' | '~') a=expression1
+    {
+        Variable v = $a.var;
+        code.add(v + " = " + $op.text + " " + v);
+        $var = v;
+    }
     |
-    expression (',' expression)*
+    a=expression1 op=('*' | '/' | '%') b=expression1
+    {
+        Variable x = $a.var;
+        Variable y = $b.var;
+        Variable v = createTempVariable(x.getType());
+        code.add(v + " = " + x + " " + $op.text + " " + y);
+        $var = v;
+    }
+    |
+    a=expression1 op=('+'|'-') b=expression1
+    {
+        Variable x = $a.var;
+        Variable y = $b.var;
+        Variable v = createTempVariable(x.getType());
+        code.add(v + " = " + x + " " + $op.text + " " + y);
+        $var = v;
+    }
+    |
+    a=expression1 op=('=='|'!='|'<'|'>'|'<='|'>=') b=expression1
+    {
+        Variable x = $a.var;
+        Variable y = $b.var;
+        Variable v = createTempVariable(Type.BooleanType);
+        code.add(v + " = " + x + " " + $op.text + " " + y);
+        $var = v;
+    }
+    |
+    a=expression1 '&&' b=expression1
+    {
+            Variable x = $a.var;
+            Variable y = $b.var;
+            Variable v = createTempVariable(Type.BooleanType);
+            code.add(v + " = " + x + " && " + y);
+            $var = v;
+     }
+    |
+    a=expression1 '||' b=expression1
+    {
+        Variable x = $a.var;
+        Variable y = $b.var;
+        Variable v = createTempVariable(Type.BooleanType);
+        code.add(v + " = " + x + " || " + y);
+        $var = v;
+    }
     ;
 
-ioFunctions:
-     'read' '(' Identifier ')' |
-     'write' '(' expression ')'
+primary returns [Variable var]:
+    Identifier {$var = resolveVariable($Identifier.text);}|
+    '(' expression ')' {$var = $expression.var;}|
+    Identifier '(' expressionList ')' {$var = callFunction($Identifier.text, $expressionList.vars); }
+    |
+    ioFunctions {$var = $ioFunctions.var;}|
+    literal { Variable t = createTempVariable($literal.result); code.add(t + " = " + $literal.text); $var = t;}
+    ;
+expressionList returns [List<Variable> vars]:
+    {$vars = new ArrayList<Variable>();}|{  $vars = new ArrayList<Variable>(); }
+    a=expression {$vars.add($a.var);} (',' b=expression{$vars.add($b.var);})*
+    ;
+
+ioFunctions returns [Variable var]:
+     'read' '('')' { $var = callFunction("read"); } |
+     'write' '(' expression ')' { $var = callFunction("write", $expression.var); }
     ;
 parameters returns [List<Variable> vars]:
     {$vars = new ArrayList<Variable>();}
@@ -107,10 +362,10 @@ parameters returns [List<Variable> vars]:
 parameter returns [Variable var]:
     type Identifier {$var = new Variable($type.result, $Identifier.text);}
     ;
-literal:
-    IntegerLiteral |
-    StringLiteral |
-    BooleanLiteral
+literal returns [Type result]:
+    IntegerLiteral {$result = Type.IntegerType;}|
+    StringLiteral {$result = Type.StringType;}|
+    BooleanLiteral {$result = Type.BooleanType;}
     ;
 // White-spaces and comments
 WS : [ \t\r\n] -> skip;

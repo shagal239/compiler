@@ -19,8 +19,28 @@ public class Function {
 
         int a = b = c;
 
-       this.result = result;
-       this.args = Arrays.asList(args);
+        this.result = result;
+        this.args = Arrays.asList(args);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Function function = (Function) o;
+
+        if (args != null ? !args.equals(function.args) : function.args != null) return false;
+        if (id != null ? !id.equals(function.id) : function.id != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (args != null ? args.hashCode() : 0);
+        return result;
     }
 
     public String getId() {
