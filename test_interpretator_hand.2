@@ -1,0 +1,33 @@
+plus:
+int t0
+pop t0
+int b
+pop b
+int a
+pop a
+int t1
+t1 = a + b
+bly
+*t0 = t1
+back
+main:
+pop void
+int t2
+t2 = 1
+int v2
+v2 = t2
+int t3
+t3 = 2
+int v3
+v3 = t3
+param v2
+param v3
+int t4
+param &t4
+call plus
+int v4
+v4 = t4
+param v4
+param &void
+call print
+back

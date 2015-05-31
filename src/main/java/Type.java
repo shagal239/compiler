@@ -6,5 +6,6 @@ public enum Type {
     IntegerType,
     BooleanType,
     StringType,
-    VoidType
+    VoidType;
 }
+

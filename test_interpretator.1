@@ -1,0 +1,21 @@
+main:
+pop void
+int t0
+t0 = 0
+int v0
+v0 = t0
+loop0:
+int t1
+t1 = 10
+boolean t2
+t2 = v0 < t1
+!if t2 goto loop1
+int t3
+t3 = 1
+v0 = v0 + t3
+goto loop0
+loop1:
+param v0
+param &void
+call println
+back

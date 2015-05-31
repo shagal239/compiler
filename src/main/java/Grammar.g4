@@ -59,8 +59,10 @@ grammar Grammar;
         if (type == Type.VoidType) {
             return Variable.Void;
         }
-        code.add(type + " t" + tempId);
-        return new Variable(type, "t" + tempId++);
+        Variable v = new Variable(type, "t" + tempId++);
+        code.add(v.declaration());
+        return v;
+
     }
 
     public Variable createVariable(String name, Type type) {
@@ -69,8 +71,8 @@ grammar Grammar;
             return null;
         } else {
             Variable v = new Variable(type, "v" + (id++));
-            code.add(v.getType() + " " + v.getId());
-            scope.addVariable(v);
+            code.add(v.declaration());
+            scope.addVariable(name, v);
             return v;
         }
     }
@@ -98,7 +100,7 @@ grammar Grammar;
         	        Functions.add(function);
         	        code.add(function.getId() + ":");
         	        Variable res = createTempVariable(function.getResult());
-        	        code.add("pop " + res);
+        	        code.add("pop " + res.getId());
         	        Collections.reverse(arguments);
         	        for (Variable variable: arguments) {
         	            Variable v = createVariable(variable.getId(), variable.getType());
@@ -156,7 +158,7 @@ methodtype returns [Type result]:
     'void' {$result = Type.VoidType;}
     ;
 
-start: body;
+start returns [List<String> result]: {code.clear();openScope();} body {$result = new ArrayList<String>(code);code.clear();};
 
 body: methodDeclaration* EOF;
 
@@ -200,7 +202,7 @@ statement:
             return null;
         }
 
-        code.add("*" + returnVariable + " = " + $e.var);
+        code.add("*" + returnVariable.getId() + " = " + $e.var.getId());
         code.add("back");
     }
         ';'
@@ -209,11 +211,11 @@ statement:
 ifstatement:
     'if' {openScope();}
     LPAREN
-    a=expression {Variable v = $a.var; String label = label(); code.add("!if " + v + " goto " + label);}
+    a=expression {Variable v = $a.var; String label = label(); code.add("!if " + v.getId() + " goto " + label);}
     RPAREN LBRACE
     s=statement { code.add(label +":"); } RBRACE
     ('else'
-    {String labelF = label(); code.add("if " + v + " goto " + labelF);}
+    {String labelF = label(); code.add("if " + v.getId() + " goto " + labelF);}
     LBRACE
     statement {code.add(labelF+ ":"); closeScope();} RBRACE )?
     ;
@@ -221,7 +223,7 @@ ifstatement:
 whilestatement:
     'while' {openLoop();}
     LPAREN
-    e=expression {Variable v = $e.var; code.add("!if " + v + " goto " + getLoopEnd()); }
+    e=expression {Variable v = $e.var; code.add("!if " + v.getId() + " goto " + getLoopEnd()); }
     RPAREN
     s=statement { code.add("goto " + getLoopStart()); closeLoop(); }
     ;
@@ -232,7 +234,7 @@ forstatement:
     forinit ';'
     { openLoop(); }
     e=expression
-    { Variable v = $e.var; code.add("!if " + v + " goto " + getLoopEnd()); } ';'
+    { Variable v = $e.var; code.add("!if " + v.getId() + " goto " + getLoopEnd()); } ';'
     {List<String> save = code;
     code = new ArrayList<String>();
     }
@@ -250,7 +252,7 @@ forstatement:
     ;
 
 declaration:
-    type varibleDeclaration[$type.result](', ' varibleDeclaration[$type.result])* ';'
+    type varibleDeclaration[$type.result](', ' varibleDeclaration[$type.result])*
     ;
 
 forinit:
@@ -263,7 +265,7 @@ varibleDeclaration [Type t]:
     {
         Variable a = createVariable($Identifier.text, t);
         Variable b = $expression.var;
-        code.add(a + " = " + b);
+        code.add(a.getId() + " = " + b.getId());
     }
     ;
 
@@ -287,7 +289,7 @@ expression1 returns [Variable var]:
     op=('-' | '!' | '~') a=expression1
     {
         Variable v = $a.var;
-        code.add(v + " = " + $op.text + " " + v);
+        code.add(v.getId() + " = " + $op.text + " " + v.getId());
         $var = v;
     }
     |
@@ -296,7 +298,7 @@ expression1 returns [Variable var]:
         Variable x = $a.var;
         Variable y = $b.var;
         Variable v = createTempVariable(x.getType());
-        code.add(v + " = " + x + " " + $op.text + " " + y);
+        code.add(v.getId() + " = " + x.getId() + " " + $op.text + " " + y.getId());
         $var = v;
     }
     |
@@ -305,7 +307,7 @@ expression1 returns [Variable var]:
         Variable x = $a.var;
         Variable y = $b.var;
         Variable v = createTempVariable(x.getType());
-        code.add(v + " = " + x + " " + $op.text + " " + y);
+        code.add(v.getId() + " = " + x.getId() + " " + $op.text + " " + y.getId());
         $var = v;
     }
     |
@@ -314,7 +316,7 @@ expression1 returns [Variable var]:
         Variable x = $a.var;
         Variable y = $b.var;
         Variable v = createTempVariable(Type.BooleanType);
-        code.add(v + " = " + x + " " + $op.text + " " + y);
+        code.add(v.getId() + " = " + x.getId() + " " + $op.text + " " + y.getId());
         $var = v;
     }
     |
@@ -323,7 +325,7 @@ expression1 returns [Variable var]:
             Variable x = $a.var;
             Variable y = $b.var;
             Variable v = createTempVariable(Type.BooleanType);
-            code.add(v + " = " + x + " && " + y);
+            code.add(v.getId() + " = " + x.getId() + " && " + y.getId());
             $var = v;
      }
     |
@@ -332,7 +334,7 @@ expression1 returns [Variable var]:
         Variable x = $a.var;
         Variable y = $b.var;
         Variable v = createTempVariable(Type.BooleanType);
-        code.add(v + " = " + x + " || " + y);
+        code.add(v.getId() + " = " + x.getId() + " || " + y.getId());
         $var = v;
     }
     ;
@@ -343,7 +345,7 @@ primary returns [Variable var]:
     Identifier '(' expressionList ')' {$var = callFunction($Identifier.text, $expressionList.vars); }
     |
     ioFunctions {$var = $ioFunctions.var;}|
-    literal { Variable t = createTempVariable($literal.result); code.add(t + " = " + $literal.text); $var = t;}
+    literal { Variable t = createTempVariable($literal.result); code.add(t.getId() + " = " + $literal.text); $var = t;}
     ;
 expressionList returns [List<Variable> vars]:
     {$vars = new ArrayList<Variable>();}|{  $vars = new ArrayList<Variable>(); }

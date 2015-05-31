@@ -1,4 +1,8 @@
 // Generated from /home/arkady/Documents/devcompiler/compiler/src/main/java/Grammar.g4 by ANTLR 4.5
+
+    import java.util.*;
+    import java.io.*;
+
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -94,12 +98,6 @@ public interface GrammarVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitVaribleDeclaration(@NotNull GrammarParser.VaribleDeclarationContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link GrammarParser#emptyexpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitEmptyexpression(@NotNull GrammarParser.EmptyexpressionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link GrammarParser#expression}.
 	 * @param ctx the parse tree

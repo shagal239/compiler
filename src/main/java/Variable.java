@@ -15,6 +15,30 @@ public class Variable {
         value = null;
     }
 
+    public String declaration() {
+        String s = "";
+        switch (type) {
+            case VoidType:
+                s += "void";
+                break;
+            case IntegerType:
+                s += "int";
+                break;
+            case StringType:
+                s += "String";
+                break;
+            case BooleanType:
+                s += "boolean";
+                break;
+            default:
+                s += "hrenikakayto";
+                break;
+        }
+
+        s += " " + id;
+        return s;
+    }
+
     public Type getType() {
         return type;
     }
@@ -48,6 +72,11 @@ public class Variable {
             return variable;
         }
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return type + ": " + id + ": " + value;
     }
 
     public Variable apply(String op, Variable other) {

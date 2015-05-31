@@ -1,4 +1,8 @@
 // Generated from /home/arkady/Documents/devcompiler/compiler/src/main/java/Grammar.g4 by ANTLR 4.5
+
+    import java.util.*;
+    import java.io.*;
+
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -147,16 +151,6 @@ public interface GrammarListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitVaribleDeclaration(@NotNull GrammarParser.VaribleDeclarationContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link GrammarParser#emptyexpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterEmptyexpression(@NotNull GrammarParser.EmptyexpressionContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link GrammarParser#emptyexpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitEmptyexpression(@NotNull GrammarParser.EmptyexpressionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GrammarParser#expression}.
 	 * @param ctx the parse tree

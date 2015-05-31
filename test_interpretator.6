@@ -1,0 +1,58 @@
+f:
+int t0
+pop t0
+int v0
+pop v0
+int t1
+t1 = 1
+boolean t2
+t2 = v0 == t1
+!if t2 goto loop0
+int t3
+t3 = 1
+*t0 = t3
+back
+loop0:
+int t4
+t4 = 2
+boolean t5
+t5 = v0 == t4
+!if t5 goto loop1
+int t6
+t6 = 1
+*t0 = t6
+back
+loop1:
+int t7
+t7 = 1
+int t8
+t8 = v0 - t7
+param t8
+int t9
+param &t9
+call f
+int t10
+t10 = 2
+int t11
+t11 = v0 - t10
+param t11
+int t12
+param &t12
+call f
+int t13
+t13 = t9 + t12
+*t0 = t13
+back
+back
+main:
+pop void
+int t14
+t14 = 50
+param t14
+int t15
+param &t15
+call f
+param t15
+param &void
+call println
+back

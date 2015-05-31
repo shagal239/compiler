@@ -12,12 +12,13 @@ public class Function {
     public Type result;
     public List<Type> args;
 
+    public Function(String name, Type result, List<Type> args) {
+        id = name;
+        this.result = result;
+        this.args = args;
+    }
     public Function(String name, Type result, Type... args) {
        id = name;
-        int b = 0;
-        int c = 1;
-
-        int a = b = c;
 
         this.result = result;
         this.args = Arrays.asList(args);

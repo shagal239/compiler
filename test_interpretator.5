@@ -1,0 +1,58 @@
+doit:
+int t0
+pop t0
+int v0
+pop v0
+int v1
+pop v1
+int t1
+t1 = v1 + v0
+param t1
+param &void
+call println
+int t2
+t2 = v1 + v0
+*t0 = t2
+back
+back
+main:
+pop void
+int t3
+t3 = 0
+int v2
+v2 = t3
+loop0:
+int t4
+t4 = 10
+boolean t5
+t5 = v2 < t4
+!if t5 goto loop1
+int t7
+t7 = 0
+int v3
+v3 = t7
+loop2:
+int t8
+t8 = 10
+boolean t9
+t9 = v3 < t8
+!if t9 goto loop3
+param v2
+param v3
+int t11
+param &t11
+call doit
+param t11
+param &void
+call println
+int t10
+t10 = 1
+v3 = v3 + t10
+goto loop2
+loop3:
+int t6
+t6 = 1
+v2 = v2 + t6
+goto loop0
+loop1:
+back
