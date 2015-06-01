@@ -52,6 +52,14 @@ public class Functions {
         return true;
     }
 
+    static public Set<Function> get(String name) {
+        if (map.containsKey(name)) {
+            return map.get(name);
+        }
+
+        return null;
+    }
+
     static public Function get(String name, List<Type> args) {
         if (!map.containsKey(name)) {
             return null;

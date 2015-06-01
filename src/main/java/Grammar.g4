@@ -7,6 +7,7 @@ grammar Grammar;
 
 @parser::members {
     List<Scope> scopes = new ArrayList<Scope>();
+    Scope functionVariables = new Scope();
     List<Variable> returnVariables = new ArrayList<Variable>();
     List<String> loopStart = new ArrayList<String>();
     List<String> loopEnd = new ArrayList<String>();
@@ -66,36 +67,83 @@ grammar Grammar;
     }
 
     public Variable createVariable(String name, Type type) {
-        Scope scope = scopes.get(scopes.size() - 1);
-        if (scope.contains(name)){
-            return null;
-        } else {
-            Variable v = new Variable(type, "v" + (id++));
-            code.add(v.declaration());
-            scope.addVariable(name, v);
-            return v;
-        }
+        if (type != Type.FunctionType) {
+        	            Scope scope = scopes.get(scopes.size() - 1);
+        	            if (scope.contains(name)){
+        	                return null;
+        	            } else {
+        	                Variable v = new Variable(type, "v" + (id++));
+        	                code.add(v.declaration());
+        	                scope.addVariable(name, v);
+        	                return v;
+        	            }
+                    } else {
+                        Scope scope = scopes.get(scopes.size() - 1);
+                        if (scope.containsFunction(name)) {
+                            return null;
+                        } else {
+                            FunctionVariable v = new FunctionVariable("F" + (id++), type);
+                            code.add(v.declaration());
+                            scope.addFunction(name, v);
+                            return v;
+                        }
+                    }
     }
+      public Variable callFuckingFunction(String name, List<Variable> variables) {
+                 Scope scope = scopes.get(scopes.size() - 1);
+                 FunctionVariable variable = scope.getFunction(name);
+                 for (Variable var : variables) {
+                 	                     if (var.type != Type.FunctionType) {
+                                              code.add("param " + var.getId());
+                                          } else {
+                                              code.add("fparam " + var.getId());
+                                          }
+                 	                 }
 
-    public Variable resolveVariable(String name) {
-        int scope = scopes.size() - 1;
-        while (scope >= 0) {
-            Scope s = scopes.get(scope);
-             Variable variable = s.get(name);
-             if (variable != null) {
-                return variable;
+                 if (variable.getType().returnType != Type.VoidType) {
+                     Variable t = createTempVariable(variable.getType().returnType);
+                     code.add("param &" + t.getId());
+                     code.add("call &" + variable.getId());
+                     return t;
+                 } else {
+                     code.add("param &void");
+                     code.add("call &" + variable.getId());
+                     return new Variable(Type.VoidType, "void");
+                 }
              }
-             scope--;
-        }
-        return null;
-    }
 
-    public Variable registerFunction(String name, Type result, List<Variable> arguments) {
+   public Variable resolveVariable(String name) {
+   	        int scope = scopes.size() - 1;
+   	        while (scope >= 0) {
+   	            Scope s = scopes.get(scope);
+   	             Variable variable = s.get(name);
+   	             if (variable != null) {
+   	                return variable;
+   	             }
+   	             scope--;
+   	        }
+
+               scope = scopes.size() - 1;
+               while (scope >= 0) {
+                   Scope s = scopes.get(scope);
+                   Variable variable = s.getFunction(name);
+                   if (variable != null) {
+                       return variable;
+                   }
+                   scope--;
+               }
+
+   	        return null;
+   	    }
+
+    public Function registerFunction(String name, Type result, List<Variable> arguments) {
         openScope();
         Type[] types = new Type[arguments.size()];
-        for (int i = 0; i < types.length;i++) {
-            types[i] = arguments.get(i).getType();
-        }
+                    List<Type> typeList = new ArrayList<Type>();
+        	        for (int i = 0; i < types.length;i++) {
+        	            types[i] = arguments.get(i).getType();
+                        typeList.add(types[i]);
+        	        }
         Function function = new Function(name, result, types);
         	        Functions.add(function);
         	        code.add(function.getId() + ":");
@@ -108,8 +156,12 @@ grammar Grammar;
         	        }
 
         returnVariables.add(res);
-
-        return res;
+        Type t = Type.FunctionType;
+                    t.returnType = result;
+                    t.args = typeList;
+                    FunctionVariable variable = new FunctionVariable(name, t);
+                    scopes.get(scopes.size() - 2).addFunction(name, variable);
+        return function;
     }
 
     public void endFunction() {
@@ -128,9 +180,16 @@ grammar Grammar;
                         types.add(v.getType());
                     }
         	        Function function = Functions.get(name, types);
-        	        for (Variable variable: variables) {
-        	            code.add("param " + variable.getId());
-        	        }
+                                            if (function == null) {
+                                                return callFuckingFunction(name, variables);
+                                            }
+        	        for (Variable var : variables) {
+                    	                     if (var.type != Type.FunctionType) {
+                                                 code.add("param " + var.getId());
+                                             } else {
+                                                 code.add("fparam " + var.getId());
+                                             }
+                    	                 }
 
         	        if (function.getResult() != Type.VoidType) {
         	           Variable t = createTempVariable(function.getResult());
@@ -150,7 +209,8 @@ grammar Grammar;
 type returns [Type result]:
     'int' {$result = Type.IntegerType;} |
     'string' {$result = Type.StringType;} |
-    'boolean' {$result = Type.BooleanType;}
+    'boolean' {$result = Type.BooleanType;} |
+    'function' {$result = Type.FunctionType;}
     ;
 
 methodtype returns [Type result]:
@@ -162,13 +222,14 @@ start returns [List<String> result]: {code.clear();openScope();} body {$result =
 
 body: methodDeclaration* EOF;
 
-methodDeclaration: 
-    methodtype Identifier LPAREN (a=parameters)? RPAREN
+methodDeclaration returns [Function func]:
+    m=methodtype Identifier LPAREN (a=parameters)? RPAREN
     {List<Variable> args = new ArrayList<Variable>();
     if (((MethodDeclarationContext)_localctx).a != null) {
         args = $a.vars;
     }
-    registerFunction($Identifier.text, $methodtype.result, args);
+    Function func = registerFunction($Identifier.text, $methodtype.result, args);
+    $func = func;
     }
     block {
         endFunction();
@@ -362,7 +423,19 @@ parameters returns [List<Variable> vars]:
     (', 'b = parameter {$vars.add($b.var);})*
     ;
 parameter returns [Variable var]:
-    type Identifier {$var = new Variable($type.result, $Identifier.text);}
+    type Identifier {$var = new Variable($type.result, $Identifier.text);} |
+    'function<' t=type '>' i=Identifier LPAREN p=parameters RPAREN
+    {
+        List<Type> args = new ArrayList<Type>();
+        for (Variable v : $p.vars) {
+            args.add(v.getType());
+        }
+        Type type = Type.FunctionType;
+        type.returnType = $t.result;
+        type.args = args;
+        Variable v = new FunctionVariable($i.text, type);
+        $var = v;
+    }
     ;
 literal returns [Type result]:
     IntegerLiteral {$result = Type.IntegerType;}|

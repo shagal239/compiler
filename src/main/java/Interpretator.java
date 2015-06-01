@@ -18,6 +18,15 @@ public class Interpretator {
     Map<String, Integer> tags = new HashMap<String, Integer>();
     List<String> commands = new ArrayList<String>();
     Stack<Variable> stack = new Stack<Variable>();
+    Stack<HashMap<String, Variable>> functionStack = new Stack<HashMap<String, Variable>>();
+
+    public Variable getFunctionVariable(String name) {
+        return functionStack.peek().get(name);
+    }
+
+    public void putFunctionVariable(String name, Variable variable) {
+        functionStack.peek().put(name, variable);
+    }
 
     public int step() {
         int pos = callStack.get(callStack.size() - 1);
@@ -78,7 +87,6 @@ public class Interpretator {
             return;
         }
 
-
         variableStack.push(new HashMap<String, Variable>());
         callStack.add(tags.get(name));
     }
@@ -106,6 +114,11 @@ public class Interpretator {
         }
         if (right.matches("[a-z][0-9]+")) {
             Variable variable = getVariable(right);
+            variable.id = name;
+            return variable;
+        }
+        if (name.matches("F[0-9]+")) {
+            Variable variable = getFunctionVariable(right);
             variable.id = name;
             return variable;
         }
@@ -170,13 +183,24 @@ public class Interpretator {
             }
             return;
         }
+
+        if (command.startsWith("fparam")) {
+            stack.add(getFunctionVariable(split[1]));
+        }
+
         if (command.startsWith("pop")) {
             if (!split[1].equals("void"))
                 putVariable(split[1], stack.pop());
             return;
         }
         if (command.startsWith("call")) {
-            callFunction(split[1]);
+            if (!split[1].startsWith("&")) {
+                callFunction(split[1]);
+            } else {
+                Variable variable = getVariable(split[1].substring(1));
+                variableStack.push(new HashMap<String, Variable>());
+                callStack.add((Integer) variable.value);
+            }
             return;
         }
 
@@ -199,6 +223,10 @@ public class Interpretator {
             return;
         }
 
+        if (command.startsWith("function")) {
+            putVariable(split[1], new Variable(Type.FunctionType, split[1]));
+            return;
+        }
 
         String name = split[0];
         if (split[0].startsWith("*")) {
@@ -227,6 +255,7 @@ public class Interpretator {
         output = new PrintWriter(System.out);
 
         variableStack.push(new HashMap<String, Variable>());
+        functionStack.push(new HashMap<String, Variable>());
 
         Scanner in = new Scanner(file);
         int p = 0;
@@ -235,6 +264,9 @@ public class Interpretator {
             line = in.nextLine();
             if (line.endsWith(":")) {
                 tags.put(line.substring(0, line.length() - 1), p);
+                Variable variable = new Variable(Type.FunctionType, line.substring(0, line.length() - 1));
+                variable.value = p;
+                putFunctionVariable(line.substring(0, line.length() - 1), variable);
             }
             commands.add(line);
             p++;

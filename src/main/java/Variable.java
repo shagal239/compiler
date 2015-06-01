@@ -30,6 +30,9 @@ public class Variable {
             case BooleanType:
                 s += "boolean";
                 break;
+            case FunctionType:
+                s += "function";
+                break;
             default:
                 s += "hrenikakayto";
                 break;

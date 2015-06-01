@@ -71,4 +71,18 @@ public class CompilerTest {
     public void test6() throws Exception {
         runTest("test_compiler.6");
     }
+
+    @Test
+    public void test7() throws Exception {
+        runTest("test_compiler.7");
+    }
+    @Test
+    public void test8() throws Exception {
+        runTest("test_compiler.8");
+    }
+
+    @Test
+    public void test9() throws Exception {
+        runTest("test_compiler.9");
+    }
 }
