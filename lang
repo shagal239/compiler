@@ -1,0 +1,225 @@
+Язык:
+type : 'int' | 'boolean' | 'string' | 'function'
+methodtype : 'int' | 'boolean' | 'string' | 'void'
+Identifier : [a-zA-Z$_] [a-zA-Z0-9$_]*
+parameter : type Identifier |
+    		'function<' type '>' Identifier ( parameters? )
+parameters : parameter (, parameter)
+methodDeclaration :
+    methodtype Identifier ( parameters? )    
+    block    
+    ;
+
+Программа состоит из нескольких methodDeclaration
+
+Среди которых должен быть main
+
+block : { (declaration | statement)* }
+
+//
+Объявление переменных
+declaration : type VariableDeclaration (, VariableDeclaration)*
+
+VariableDeclaration : type Identifier |
+					  type Identifier = expression
+//
+
+Содержимое block
+statement:
+	';' | ifstatement | forstatement | whilestatement | block | break | continue | return expression
+
+ifstatement :
+if (expression) {
+	statement
+} (else { statement })?
+
+forstatement : 
+	for (declaration | expressionList ; expression ; expressuinList) {
+		statement
+	}
+
+whilestatement :
+	while (expression) {
+		statement
+	}	
+
+Выражения:
+expression :
+	Identifier (=|+=) expression1    (присваивание) |
+	expression1
+
+expression1 :
+	primary |
+    (-|!|~)expression1 (унарные операции) |
+    expression1 (*|/|+|-|%|&&|||) expression1 (операции) |
+    expression1 (==|!=|<|>|<=|>=) expression1 (сравнение) 
+
+primary :
+	Identifier | (expression) | 
+	Idenfier (expressionList) (вызов функции) |
+	literal
+
+literal :
+	Integer |
+	String |
+	Boolean	
+
+
+
+Интерпретатор:
+Хранится:
+	Stack<Integer> callStack = new Stack<Integer>();
+    Stack<HashMap<String, Variable>> variableStack = new Stack<HashMap<String, Variable>>();
+    Map<String, Integer> tags = new HashMap<String, Integer>();    -     куда прыгать для вызова функции
+    List<String> commands = new ArrayList<String>();   -     код
+    Stack<Variable> stack = new Stack<Variable>();    -    передача параметров в функции
+    Stack<HashMap<String, Variable>> functionStack = new Stack<HashMap<String, Variable>>();   -    аналог variableStask для функций высших порядков
+
+    Пример:
+//программа
+int f1(int n) {
+    println(n);
+    return 0;
+}
+
+int g(function<int> f(int a), int n) {
+    return f(n);
+}
+
+void main() {
+    g(f1,5);
+}
+////////////////////////////////
+    f1:                     старт функции, хранится в tags 
+int t0                      return variable      все переменные кладутся в новый variableStack 
+pop t0                      снять со stack 
+int v0                      параметры функции снимаем со стека   объявление переменной в текущем scope типа int   еще можно объявить string boolean и 						function
+pop v0                      снять со stack   
+param v0                    кладем параметр v0 на стэк
+param &void					println имеет тип void  &означает что это return type
+call println                call стандартной функции (еще есть read/readln/print)
+int t1                      переменная для кода возврата 
+t1 = 0                      инициализация
+*t0 = t1                    возврат 
+back                        чистка стека и variableStack
+back
+g:                          старт функции                        
+int t2
+pop t2
+int v1
+pop v1
+function F2                 переменная типа function
+pop F2                      сняли со стека функцию
+param v1
+int t3
+param &t3
+call &F2                    call функции, & означает что это функции высших порядков и надо их найти в functionVariable
+*t2 = t3
+back
+back
+main:
+pop void
+int t4
+t4 = 5
+fparam f1
+param t4
+int t5
+param &t5
+call g
+back
+
+Так же есть два типа операций унарные и бинарные
+int t1
+t1 = v1 + v0
+
+int t3
+t3 = 0
+int v2
+v2 = t3
+
+If statement 
+void main() {
+    int x = 51;
+    if (x > 50) {
+        println("yes");
+    }
+}
+
+main:
+pop void
+int t0
+t0 = 51
+int v0
+v0 = t0
+int t1
+t1 = 50
+boolean t2
+t2 = v0 > t1
+!if t2 goto loop0         куда прыгать прописано в tags
+String t3
+t3 = "yes"
+param t3
+param &void
+call println
+loop0:                    хранится в tags
+back
+
+For statement
+int doit(int x, int y) {
+    println(x + y);
+    return x + y;
+}
+
+void main() {
+    for (int i = 0; i < 10; i += 1) {
+        for (int j = 0; j < 10; j += 1) {
+            println(doit(i,j));
+        }
+    }
+}
+
+doit:
+-//-
+back
+main:
+pop void
+int t3
+t3 = 0
+int v2
+v2 = t3
+loop0:
+int t4
+t4 = 10
+boolean t5
+t5 = v2 < t4
+!if t5 goto loop1
+int t7
+t7 = 0
+int v3
+v3 = t7
+loop2:
+int t8
+t8 = 10
+boolean t9
+t9 = v3 < t8
+!if t9 goto loop3
+param v2
+param v3
+int t11
+param &t11
+call doit
+param t11
+param &void
+call println
+int t10
+t10 = 1
+v3 = v3 + t10
+goto loop2
+loop3:
+int t6
+t6 = 1
+v2 = v2 + t6
+goto loop0
+loop1:
+back
+

@@ -301,7 +301,7 @@ forstatement:
     }
     expressionList
     { List<String> temp = save;
-    save = code;
+    save = code;            '
     code = temp;
     }
     RPAREN
@@ -424,7 +424,7 @@ parameters returns [List<Variable> vars]:
     ;
 parameter returns [Variable var]:
     type Identifier {$var = new Variable($type.result, $Identifier.text);} |
-    'function<' t=type '>' i=Identifier LPAREN p=parameters RPAREN
+    'function<' t=type '>' i=Identifier LPAREN p=parameters? RPAREN
     {
         List<Type> args = new ArrayList<Type>();
         for (Variable v : $p.vars) {

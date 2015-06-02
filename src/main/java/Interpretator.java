@@ -139,7 +139,7 @@ public class Interpretator {
             return;
         }
 
-        if (command.equals("bly")) {
+        if (command.equals("breakpoint")) {
             return;
         }
 
