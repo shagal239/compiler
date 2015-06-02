@@ -161,6 +161,14 @@ public class GrammarParser extends Parser {
 
 	    }
 
+	    public Variable createTempVariableNoWrite(Type type) {
+	            if (type == Type.VoidType) {
+	                return Variable.Void;
+	            }
+	            Variable v = new Variable(type, "t" + tempId++);
+	            return v;
+	        }
+
 	    public Variable createVariable(String name, Type type) {
 	        if (type != Type.FunctionType) {
 	        	            Scope scope = scopes.get(scopes.size() - 1);
@@ -1486,8 +1494,13 @@ public class GrammarParser extends Parser {
 				((Expression1Context)_localctx).a = expression1(6);
 
 				        Variable v = ((Expression1Context)_localctx).a.var;
-				        code.add(v.getId() + " = " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + v.getId());
-				        ((Expression1Context)_localctx).var =  v;
+				        Variable tmp = v.apply((((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null));
+				        if (tmp != null) {
+				            ((Expression1Context)_localctx).var =  tmp;
+				        } else {
+				            code.add(v.getId() + " = " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + v.getId());
+				            ((Expression1Context)_localctx).var =  v;
+				        }
 				    
 				}
 				break;
@@ -1539,9 +1552,14 @@ public class GrammarParser extends Parser {
 
 						                  Variable x = ((Expression1Context)_localctx).a.var;
 						                  Variable y = ((Expression1Context)_localctx).b.var;
-						                  Variable v = createTempVariable(x.getType());
-						                  code.add(v.getId() + " = " + x.getId() + " " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + y.getId());
-						                  ((Expression1Context)_localctx).var =  v;
+						                   Variable tmp = x.apply((((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null), y);
+						                                      if (tmp != null) {
+						                                          ((Expression1Context)_localctx).var =  tmp;
+						                                      } else {
+						                                          Variable v = createTempVariable(x.getType());
+						                                          code.add(v.getId() + " = " + x.getId() +" " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + y.getId());
+						                                          ((Expression1Context)_localctx).var =  v;
+						                                      }
 						              
 						}
 						break;
@@ -1566,9 +1584,14 @@ public class GrammarParser extends Parser {
 
 						                  Variable x = ((Expression1Context)_localctx).a.var;
 						                  Variable y = ((Expression1Context)_localctx).b.var;
-						                  Variable v = createTempVariable(x.getType());
-						                  code.add(v.getId() + " = " + x.getId() + " " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + y.getId());
-						                  ((Expression1Context)_localctx).var =  v;
+						                   Variable tmp = x.apply((((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null), y);
+						                                      if (tmp != null) {
+						                                          ((Expression1Context)_localctx).var =  tmp;
+						                                      } else {
+						                                          Variable v = createTempVariable(x.getType());
+						                                          code.add(v.getId() + " = " + x.getId() +" " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + y.getId());
+						                                          ((Expression1Context)_localctx).var =  v;
+						                                      }
 						              
 						}
 						break;
@@ -1593,9 +1616,17 @@ public class GrammarParser extends Parser {
 
 						                  Variable x = ((Expression1Context)_localctx).a.var;
 						                  Variable y = ((Expression1Context)_localctx).b.var;
-						                  Variable v = createTempVariable(Type.BooleanType);
-						                  code.add(v.getId() + " = " + x.getId() + " " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + y.getId());
-						                  ((Expression1Context)_localctx).var =  v;
+
+						                  Variable tmp = x.apply((((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null), y);
+						                              if (tmp != null) {
+						                                  ((Expression1Context)_localctx).var =  tmp;
+						                              } else {
+						                                  Variable v = createTempVariable(Type.BooleanType);
+						                                  code.add(v.getId() + " = " + x.getId() +" " + (((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null) + " " + y.getId());
+						                                  ((Expression1Context)_localctx).var =  v;
+						                              }
+
+
 						              
 						}
 						break;
@@ -1614,9 +1645,14 @@ public class GrammarParser extends Parser {
 
 						                      Variable x = ((Expression1Context)_localctx).a.var;
 						                      Variable y = ((Expression1Context)_localctx).b.var;
-						                      Variable v = createTempVariable(Type.BooleanType);
-						                      code.add(v.getId() + " = " + x.getId() + " && " + y.getId());
-						                      ((Expression1Context)_localctx).var =  v;
+						                      Variable tmp = x.apply("&&", y);
+						                      if (tmp != null) {
+						                          ((Expression1Context)_localctx).var =  tmp;
+						                      } else {
+						                          Variable v = createTempVariable(Type.BooleanType);
+						                          code.add(v.getId() + " = " + x.getId() + " && " + y.getId());
+						                          ((Expression1Context)_localctx).var =  v;
+						                      }
 						               
 						}
 						break;
@@ -1635,9 +1671,14 @@ public class GrammarParser extends Parser {
 
 						                  Variable x = ((Expression1Context)_localctx).a.var;
 						                  Variable y = ((Expression1Context)_localctx).b.var;
-						                  Variable v = createTempVariable(Type.BooleanType);
-						                  code.add(v.getId() + " = " + x.getId() + " || " + y.getId());
-						                  ((Expression1Context)_localctx).var =  v;
+						                   Variable tmp = x.apply((((Expression1Context)_localctx).op!=null?((Expression1Context)_localctx).op.getText():null), y);
+						                                      if (tmp != null) {
+						                                          ((Expression1Context)_localctx).var =  tmp;
+						                                      } else {
+						                                          Variable v = createTempVariable(Type.BooleanType);
+						                                          code.add(v.getId() + " = " + x.getId() +" || " + y.getId());
+						                                          ((Expression1Context)_localctx).var =  v;
+						                                      }
 						              
 						}
 						break;
@@ -1748,7 +1789,7 @@ public class GrammarParser extends Parser {
 				{
 				setState(252);
 				((PrimaryContext)_localctx).literal = literal();
-				 Variable t = createTempVariable(((PrimaryContext)_localctx).literal.result); code.add(t.getId() + " = " + (((PrimaryContext)_localctx).literal!=null?_input.getText(((PrimaryContext)_localctx).literal.start,((PrimaryContext)_localctx).literal.stop):null)); ((PrimaryContext)_localctx).var =  t;
+				 Variable t = createTempVariableNoWrite(((PrimaryContext)_localctx).literal.result); t.value = (((PrimaryContext)_localctx).literal!=null?_input.getText(((PrimaryContext)_localctx).literal.start,((PrimaryContext)_localctx).literal.stop):null); ((PrimaryContext)_localctx).var =  t;
 				}
 				break;
 			}

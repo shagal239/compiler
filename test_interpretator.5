@@ -17,25 +17,17 @@ back
 back
 main:
 pop void
-int t3
-t3 = 0
 int v2
-v2 = t3
+v2 = 0
 loop0:
-int t4
-t4 = 10
 boolean t5
-t5 = v2 < t4
+t5 = v2 < 10
 !if t5 goto loop1
-int t7
-t7 = 0
 int v3
-v3 = t7
+v3 = 0
 loop2:
-int t8
-t8 = 10
 boolean t9
-t9 = v3 < t8
+t9 = v3 < 10
 !if t9 goto loop3
 param v2
 param v3
@@ -45,14 +37,10 @@ call doit
 param t11
 param &void
 call println
-int t10
-t10 = 1
-v3 = v3 + t10
+v3 = v3 + 1
 goto loop2
 loop3:
-int t6
-t6 = 1
-v2 = v2 + t6
+v2 = v2 + 1
 goto loop0
 loop1:
 back

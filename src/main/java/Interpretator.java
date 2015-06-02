@@ -93,6 +93,23 @@ public class Interpretator {
 
 
     public Variable getVariable(String name) {
+        if (name.equals("true") || name.equals("false")) {
+            Variable variable = new Variable(Type.BooleanType, name);
+            variable.value = Boolean.parseBoolean(name);
+            return variable;
+        }
+
+        if (name.startsWith("\"")) {
+            Variable variable = new Variable(Type.StringType, name);
+            variable.value = (name.substring(1, name.length() - 1));
+            return variable;
+        }
+
+        if (name.matches("[0-9]+")) {
+            Variable variable = new Variable(Type.IntegerType, name);
+            variable.value = (Integer.parseInt(name));
+            return variable;
+        }
         return variableStack.peek().get(name);
     }
 

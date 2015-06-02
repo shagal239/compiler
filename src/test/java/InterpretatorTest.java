@@ -35,6 +35,13 @@ public class InterpretatorTest {
     }
 
     @Test
+    public void test5() throws Exception {
+        File file = new File("test_interpretator.5");
+        Interpretator interpretator = new Interpretator();
+        interpretator.run(file);
+    }
+
+    @Test
     public void test_auto() throws Exception {
         File file = new File("test_interpretator.3");
         Interpretator interpretator = new Interpretator();

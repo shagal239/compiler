@@ -51,6 +51,7 @@ public class Variable {
     }
 
     public String getId() {
+        if (value != null) return value.toString();
         return id;
     }
 
@@ -248,7 +249,8 @@ public class Variable {
                 }
 
                 if (type == Type.IntegerType) {
-                    variable.value = new Boolean(((Integer)value).compareTo((Integer)other.value) > 0);
+                    boolean res = Integer.parseInt(value.toString()) > Integer.parseInt(other.value.toString());
+                    variable.value = new Boolean(res);
                 }
 
                 if (type == Type.StringType) {

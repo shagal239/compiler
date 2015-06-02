@@ -90,4 +90,14 @@ public class CompilerTest {
     public void test10() throws Exception {
         runTest("test_compiler.10");
     }
+
+    @Test
+    public void test11() throws Exception {
+        runTest("test_compiler.11");
+    }
+
+    @Test
+    public void test12() throws Exception {
+        runTest("test_compiler.12");
+    }
 }

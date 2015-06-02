@@ -66,6 +66,14 @@ grammar Grammar;
 
     }
 
+    public Variable createTempVariableNoWrite(Type type) {
+            if (type == Type.VoidType) {
+                return Variable.Void;
+            }
+            Variable v = new Variable(type, "t" + tempId++);
+            return v;
+        }
+
     public Variable createVariable(String name, Type type) {
         if (type != Type.FunctionType) {
         	            Scope scope = scopes.get(scopes.size() - 1);
@@ -354,53 +362,86 @@ expression1 returns [Variable var]:
     op=('-' | '!' | '~') a=expression1
     {
         Variable v = $a.var;
-        code.add(v.getId() + " = " + $op.text + " " + v.getId());
-        $var = v;
+        Variable tmp = v.apply($op.text);
+        if (tmp != null) {
+            $var = tmp;
+        } else {
+            code.add(v.getId() + " = " + $op.text + " " + v.getId());
+            $var = v;
+        }
     }
     |
     a=expression1 op=('*' | '/' | '%') b=expression1
     {
         Variable x = $a.var;
         Variable y = $b.var;
-        Variable v = createTempVariable(x.getType());
-        code.add(v.getId() + " = " + x.getId() + " " + $op.text + " " + y.getId());
-        $var = v;
+         Variable tmp = x.apply($op.text, y);
+                            if (tmp != null) {
+                                $var = tmp;
+                            } else {
+                                Variable v = createTempVariable(x.getType());
+                                code.add(v.getId() + " = " + x.getId() +" " + $op.text + " " + y.getId());
+                                $var = v;
+                            }
     }
     |
     a=expression1 op=('+'|'-') b=expression1
     {
         Variable x = $a.var;
         Variable y = $b.var;
-        Variable v = createTempVariable(x.getType());
-        code.add(v.getId() + " = " + x.getId() + " " + $op.text + " " + y.getId());
-        $var = v;
+         Variable tmp = x.apply($op.text, y);
+                            if (tmp != null) {
+                                $var = tmp;
+                            } else {
+                                Variable v = createTempVariable(x.getType());
+                                code.add(v.getId() + " = " + x.getId() +" " + $op.text + " " + y.getId());
+                                $var = v;
+                            }
     }
     |
     a=expression1 op=('=='|'!='|'<'|'>'|'<='|'>=') b=expression1
     {
         Variable x = $a.var;
         Variable y = $b.var;
-        Variable v = createTempVariable(Type.BooleanType);
-        code.add(v.getId() + " = " + x.getId() + " " + $op.text + " " + y.getId());
-        $var = v;
+
+        Variable tmp = x.apply($op.text, y);
+                    if (tmp != null) {
+                        $var = tmp;
+                    } else {
+                        Variable v = createTempVariable(Type.BooleanType);
+                        code.add(v.getId() + " = " + x.getId() +" " + $op.text + " " + y.getId());
+                        $var = v;
+                    }
+
+
     }
     |
     a=expression1 '&&' b=expression1
     {
             Variable x = $a.var;
             Variable y = $b.var;
-            Variable v = createTempVariable(Type.BooleanType);
-            code.add(v.getId() + " = " + x.getId() + " && " + y.getId());
-            $var = v;
+            Variable tmp = x.apply("&&", y);
+            if (tmp != null) {
+                $var = tmp;
+            } else {
+                Variable v = createTempVariable(Type.BooleanType);
+                code.add(v.getId() + " = " + x.getId() + " && " + y.getId());
+                $var = v;
+            }
      }
     |
     a=expression1 '||' b=expression1
     {
         Variable x = $a.var;
         Variable y = $b.var;
-        Variable v = createTempVariable(Type.BooleanType);
-        code.add(v.getId() + " = " + x.getId() + " || " + y.getId());
-        $var = v;
+         Variable tmp = x.apply($op.text, y);
+                            if (tmp != null) {
+                                $var = tmp;
+                            } else {
+                                Variable v = createTempVariable(Type.BooleanType);
+                                code.add(v.getId() + " = " + x.getId() +" || " + y.getId());
+                                $var = v;
+                            }
     }
     ;
 
@@ -410,7 +451,7 @@ primary returns [Variable var]:
     Identifier '(' expressionList ')' {$var = callFunction($Identifier.text, $expressionList.vars); }
     |
     ioFunctions {$var = $ioFunctions.var;}|
-    literal { Variable t = createTempVariable($literal.result); code.add(t.getId() + " = " + $literal.text); $var = t;}
+    literal { Variable t = createTempVariableNoWrite($literal.result); t.value = $literal.text; $var = t;}
     ;
 expressionList returns [List<Variable> vars]:
     {$vars = new ArrayList<Variable>();}|{  $vars = new ArrayList<Variable>(); }

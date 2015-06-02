@@ -1,32 +1,22 @@
 main:
 pop void
-int t0
-t0 = 750
 int v0
-v0 = t0
-int t1
-t1 = 0
+v0 = 10
 int v1
-v1 = t1
+v1 = 0
 loop0:
 boolean t2
 t2 = v1 < v0
 !if t2 goto loop1
-int t4
-t4 = 1
 int t5
-t5 = v1 + t4
+t5 = v1 + 1
 param t5
 param &void
 call println
-int t3
-t3 = 1
-v1 = v1 + t3
+v1 = v1 + 1
 goto loop0
 loop1:
-String t6
-t6 = "done"
-param t6
+param "done"
 param &void
 call println
 back
