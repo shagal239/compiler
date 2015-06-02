@@ -122,6 +122,10 @@ public class Interpretator {
             variable.id = name;
             return variable;
         }
+        if (functionStack.peek().containsKey(right)) {
+            Variable variable = getFunctionVariable(right);
+            return variable;
+        }
         return applyUnary(name, right.substring(1));
     }
 
@@ -185,7 +189,12 @@ public class Interpretator {
         }
 
         if (command.startsWith("fparam")) {
-            stack.add(getFunctionVariable(split[1]));
+            if (!split[1].startsWith("&")) {
+                stack.add(getFunctionVariable(split[1]));
+            } else {
+                stack.add(getVariable(split[1].substring(1)));
+            }
+            return;
         }
 
         if (command.startsWith("pop")) {

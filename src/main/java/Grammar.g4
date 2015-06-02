@@ -193,6 +193,10 @@ grammar Grammar;
 
         	        if (function.getResult() != Type.VoidType) {
         	           Variable t = createTempVariable(function.getResult());
+        	           if (t.getType() == Type.FunctionType) {
+        	               code.add("fparam &" + t.getId());
+                           code.add("call " + function.getId());
+        	           }
         	           code.add("param &" + t.getId());
         	           code.add("call " + function.getId());
         	           return t;
@@ -210,7 +214,7 @@ type returns [Type result]:
     'int' {$result = Type.IntegerType;} |
     'string' {$result = Type.StringType;} |
     'boolean' {$result = Type.BooleanType;} |
-    'function' {$result = Type.FunctionType;}
+    'function<' r=type '>' {$result = Type.FunctionType; $result.returnType = $r.result;}
     ;
 
 methodtype returns [Type result]:
@@ -301,7 +305,7 @@ forstatement:
     }
     expressionList
     { List<String> temp = save;
-    save = code;            '
+    save = code;
     code = temp;
     }
     RPAREN

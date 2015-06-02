@@ -47,4 +47,11 @@ public class InterpretatorTest {
         Interpretator interpretator = new Interpretator();
         interpretator.run(file);
     }
+
+    @Test
+    public void test_auto_10() throws Exception {
+        File file = new File("test_interpretator.10");
+        Interpretator interpretator = new Interpretator();
+        interpretator.run(file);
+    }
 }
