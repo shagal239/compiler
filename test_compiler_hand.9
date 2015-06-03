@@ -1,0 +1,12 @@
+int f1(int n) {
+    println(n);
+    return 0;
+}
+
+int g(function<int> f(int a), int n) {
+    return f(n);
+}
+
+void main() {
+    g(f1,5);
+}

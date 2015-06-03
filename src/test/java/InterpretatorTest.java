@@ -50,7 +50,7 @@ public class InterpretatorTest {
 
     @Test
     public void test_auto_10() throws Exception {
-        File file = new File("test_interpretator.10");
+        File file = new File("test_interpretator.9");
         Interpretator interpretator = new Interpretator();
         interpretator.run(file);
     }

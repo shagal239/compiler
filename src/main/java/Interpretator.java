@@ -69,6 +69,14 @@ public class Interpretator {
             putVariable(to.id, read(name));
             return;
         }
+        if (name.equals("toInt")) {
+            Variable to = stack.pop();
+            Variable from = stack.pop();
+            Variable variable = new Variable(Type.IntegerType, name);
+            variable.value = Integer.parseInt((String) from.value);
+            putVariable(to.id, variable);
+            return;
+        }
         if (name.equals("readln")) {
             Variable to = stack.pop();
             putVariable(to.id, readln(name));
@@ -277,7 +285,7 @@ public class Interpretator {
     }
 
     public void run(File file) throws Exception {
-        input = new Scanner(System.in);
+        input = new Scanner(new File("input.txt"));
         output = new PrintWriter(System.out);
 
         variableStack.push(new HashMap<String, Variable>());

@@ -1,0 +1,8 @@
+int pr() {
+    return 0;
+}
+
+void main() {
+    function<int> fff = pr;
+    println(fff());
+}

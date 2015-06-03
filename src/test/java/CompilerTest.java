@@ -83,6 +83,11 @@ public class CompilerTest {
     }
 
     @Test
+    public void test9() throws Exception {
+        runTest("test_compiler.9");
+    }
+
+    @Test
     public void test10() throws Exception {
         runTest("test_compiler.10");
     }

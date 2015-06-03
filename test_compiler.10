@@ -1,0 +1,12 @@
+int pr() {
+    return 0;
+}
+
+function<int> f() {
+    return pr;
+}
+
+void main() {
+    function<int> fff = f();
+    println(fff());
+}
