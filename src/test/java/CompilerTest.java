@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.List;
 
 /**
@@ -79,11 +80,6 @@ public class CompilerTest {
     @Test
     public void test8() throws Exception {
         runTest("test_compiler.8");
-    }
-
-    @Test
-    public void test9() throws Exception {
-        runTest("test_compiler.9");
     }
 
     @Test
